@@ -1,0 +1,16 @@
+{
+    "hostname": "",
+    "mode": "", 
+    "serverport": 0, 
+    "connected": 1, 
+    "ipaddress": "", 
+    "dbhost": "", 
+    "dbuser": "", 
+    "database": "", 
+    "dbtable": "", 
+    "dbpassword": "", 
+    "ssid": "", 
+    "wifipw": "", 
+    "piinputs": [], 
+    "pioutputs": []
+}
