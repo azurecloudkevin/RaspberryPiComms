@@ -87,6 +87,7 @@ dbhost = data["dbhost"]
 dbuser = data["dbuser"]
 dbpassword = data["dbpassword"]
 database = data["database"]
+clientports = data["clientports"]
 serverport = data["serverport"]
 pi_inputs = data["piinputs"]
 pi_outputs = data["pioutputs"]
@@ -118,7 +119,17 @@ inputs = list(pi_inputs)
 outputs = list(pi_outputs)
 pidevice = pi.raspberrypi(pi_inputs, pi_outputs)
 qdatahandler = qdata.queuedata(hostID, ip_address)
-soc = sock.comms(serverIP, serverport, mode)
+connections = []
+
+if(mode == "server"):
+    for port in clientports:
+        soc = sock.comms(serverIP, port, mode)
+        soc.acceptconnection()
+        connections.append(soc)
+
+else:
+    clientsoc = sock.comms(serverIP, serverport, mode)
+    clientsoc.clientconnect()
 
 def processtrigger():
     global alarmts, resolvedts
@@ -150,9 +161,9 @@ def infloop():
 
 def connecttoserver():
     global alarmts, resolvedts
-    soc = sock.comms(serverIP, serverport, mode)
-    soc.connect()
-    serverdata = soc.read()
+    # soc = sock.comms(serverIP, serverport, mode)
+    # soc.connect()
+    serverdata = clientsoc.read()
     returnlist = qdatahandler.parse_data(serverdata)
     elements = list(returnlist)
     alarmID = elements[0]
@@ -177,15 +188,13 @@ def connecttoserver():
         print("Device data: alarmID:", alarmts, "resolutionID:", resolvedts)
         print("Server data: alarmID:", alarmID, "resolutionID:", resolvedStatus)
     reply = qdatahandler.create_heartbeat(alarmts, resolvedts)
-    soc.write(reply)
-    soc.clientclosesoc()
+    clientsoc.write(reply)
     pidb.checkin(ip_address, hostname)
 
-def connecttoclient():
+def connecttoclient(soc):
     global alarmts, resolvedts
-    heartbeat = qdatahandler.create_heartbeat(alarmts, resolvedts)
-    
-    soc.acceptconnection()
+    heartbeat = qdatahandler.create_heartbeat(alarmts, resolvedts)    
+    # soc.acceptconnection()
     soc.write(heartbeat)
     data = soc.read()
     returnlist = qdatahandler.parse_data(data)
@@ -200,7 +209,7 @@ def connecttoclient():
         resolutiontime = calendar.timegm(timestamp)
         pidb.resolve_alarm_status(hostid, alarmts)
                 
-    soc.servercloseconn()
+    # soc.servercloseconn()
     pidb.checkin(ip_address, hostname)
 
         
@@ -208,7 +217,8 @@ def connecttoclient():
 def startprocess():
     if(mode == "server"):
         while(True):
-            connecttoclient()
+            for connection in connections:
+                connecttoclient(connection)
     else:
         while(True):
             connecttoserver()

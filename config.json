@@ -2,6 +2,7 @@
     "hostname": "",
     "mode": "", 
     "serverport": 0, 
+    "clientports":[0],
     "connected": 1, 
     "ipaddress": "", 
     "dbhost": "", 
